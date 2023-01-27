@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
 
@@ -14,6 +14,8 @@ class Payment extends StatefulWidget {
 class _PaymentState extends State<Payment> {
   Map<String, dynamic>? paymentIntent;
   bool isLoading = false;
+  var secret =
+      "sk_test_51MUQTeG8f4YHCKc16bHB3fUHcEFVXKPwKRg71JejeCqlsUqZokXUU47vwFHbLgCUAiBqD7O9X35umbs9AbNmA4Ns00XYW9w7K1";
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -26,9 +28,14 @@ class _PaymentState extends State<Payment> {
         body: Center(
           child: ElevatedButton(
             onPressed: () {
-              makePayment();
+              // makePayment();
+              createcustomer();
             },
-            child: Text(isLoading ? "wait..." : "make it"),
+            child: isLoading
+                ? const CupertinoActivityIndicator(
+                    color: Colors.white,
+                  )
+                : const Text("make it"),
           ),
         ),
       ),
@@ -36,8 +43,6 @@ class _PaymentState extends State<Payment> {
   }
 
   Future<void> makePayment() async {
-    var secret =
-        "sk_test_51MUQTeG8f4YHCKc16bHB3fUHcEFVXKPwKRg71JejeCqlsUqZokXUU47vwFHbLgCUAiBqD7O9X35umbs9AbNmA4Ns00XYW9w7K1";
     try {
       const url = 'https://api.stripe.com/v1/payment_intents';
       Map<String, dynamic> body = {
@@ -78,6 +83,42 @@ class _PaymentState extends State<Payment> {
       });
     } catch (e) {
       print("error: $e");
+    }
+  }
+
+  Future<void> createcustomer() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      var body = {
+        'name': 'Jenny Rosen',
+        'address': {
+          'line1': '510 Townsend St',
+          'postal_code': '98140',
+          'city': 'San Francisco',
+          'state': 'CA',
+          'country': 'US',
+        }
+      };
+      http.Response response = await http.post(
+        Uri.parse('https://api.stripe.com/v1/customers'),
+        body: body,
+        //  options: Options(contentType:Headers.formUrlEncodedContentType,
+        headers: {
+          'Authorization': 'Bearer $secret',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+      );
+      var data = jsonDecode(response.body);
+
+      print(data);
+      setState(() {
+        isLoading = false;
+      });
+      // return jsonDecode(response.body);
+    } catch (err) {
+      print('err charging user: ${err.toString()}');
     }
   }
 }
